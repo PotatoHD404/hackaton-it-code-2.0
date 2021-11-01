@@ -1,39 +1,72 @@
-package function
+package it_code
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 )
 
 var books []Book
-var handler http.Handler
+var handler *APIHandler
+
+type APIHandler struct {
+	h  http.Handler
+	db *bun.DB
+}
 
 func NewHttpHandler() http.Handler {
 	r := mux.NewRouter()
-	
-	r.HandleFunc("/api/books", getBooks).Methods("GET")
-	r.HandleFunc("/api/books/{id}", getBook).Methods("GET")
-	r.HandleFunc("/api/books", createBook).Methods("POST")
-	r.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
-	r.HandleFunc("/api/books/{id}", deleteBook).Methods("DELETE")
+	r.HandleFunc("/api/books", GetBooks).Methods("GET")
+	r.HandleFunc("/api/books/{id}", GetBook).Methods("GET")
+	r.HandleFunc("/api/books", CreateBook).Methods("POST")
+	r.HandleFunc("/api/books/{id}", UpdateBook).Methods("PUT")
+	r.HandleFunc("/api/books/{id}", DeleteBook).Methods("DELETE")
 	return r
 }
 
+func NewDB() *bun.DB {
+	books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
+		Author: &Author{Firstname: "John", Lastname: "Doe"}})
+	books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
+		Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
+	dsn := os.Getenv("POSTGRESQL")
+	// dsn := "unix://user:pass@dbname/var/run/postgresql/.s.PGSQL.5432"
+	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	db := bun.NewDB(sqldb, pgdialect.New())
+	return db
+}
+
+func NewAPIHandler() *APIHandler {
+	res := &APIHandler{NewHttpHandler(), NewDB()}
+	return res
+}
+
+//var h
+
+func InitProject(){
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if handler == nil {
-		handler = NewHttpHandler()
-		books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
-			Author: &Author{Firstname: "John", Lastname: "Doe"}})
-		books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
-			Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
+		InitProject()
+		handler = NewAPIHandler()
 	}
 
-	handler.ServeHTTP(w, r)
+	handler.h.ServeHTTP(w, r)
 }
 
 // Book struct (Model)
@@ -52,15 +85,14 @@ type Author struct {
 
 // Init books var as a slice Book struct
 
-
-// Get all books
-func getBooks(w http.ResponseWriter, r *http.Request) {
+// GetBooks Get all books
+func GetBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(books)
 }
 
-// Get single book
-func getBook(w http.ResponseWriter, r *http.Request) {
+// GetBook Get single book
+func GetBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r) // Gets params
 	// Loop through books and find one with the id from the params
@@ -73,8 +105,8 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Book{})
 }
 
-// Add new book
-func createBook(w http.ResponseWriter, r *http.Request) {
+// CreateBook Add new book
+func CreateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var book Book
 	_ = json.NewDecoder(r.Body).Decode(&book)
@@ -83,8 +115,8 @@ func createBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(book)
 }
 
-// Update book
-func updateBook(w http.ResponseWriter, r *http.Request) {
+// UpdateBook Update book
+func UpdateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range books {
@@ -100,8 +132,8 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Delete book
-func deleteBook(w http.ResponseWriter, r *http.Request) {
+// DeleteBook Delete book
+func DeleteBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range books {
