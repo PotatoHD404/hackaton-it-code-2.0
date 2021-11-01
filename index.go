@@ -1,53 +1,39 @@
-package handler
+package function
 
 import (
 	"encoding/json"
 
 	"github.com/gorilla/mux"
-	//"fmt"
-	//"net/http/httptest"
-	//"log"
 	"math/rand"
 	"net/http"
 	"strconv"
 )
 
-// func main(){
-
-// }
+var books []Book
+var handler http.Handler
 
 func NewHttpHandler() http.Handler {
 	r := mux.NewRouter()
-	//r.HandleFunc("/", HomeHandler)
-	//r.HandleFunc("/products", ProductsHandler)
-	//r.HandleFunc("/articles", ArticlesHandler)
-	r.HandleFunc("/books", getBooks).Methods("GET")
-	r.HandleFunc("/books/{id}", getBook).Methods("GET")
-	r.HandleFunc("/books", createBook).Methods("POST")
-	r.HandleFunc("/books/{id}", updateBook).Methods("PUT")
-	r.HandleFunc("/books/{id}", deleteBook).Methods("DELETE")
+	
+	r.HandleFunc("/api/books", getBooks).Methods("GET")
+	r.HandleFunc("/api/books/{id}", getBook).Methods("GET")
+	r.HandleFunc("/api/books", createBook).Methods("POST")
+	r.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
+	r.HandleFunc("/api/books/{id}", deleteBook).Methods("DELETE")
 	return r
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
-		Author: &Author{Firstname: "John", Lastname: "Doe"}})
-	books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
-		Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
-	handler := NewHttpHandler()
-	//handler := NewHttpHandler()
 
-	//req, err := ParseRequest(event)
-	//if err != nil {
-	//	return FormatError(http.StatusBadRequest, err), nil
-	//}
-	//res := httptest.NewRecorder()
+func Handler(w http.ResponseWriter, r *http.Request) {
+	if handler == nil {
+		handler = NewHttpHandler()
+		books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
+			Author: &Author{Firstname: "John", Lastname: "Doe"}})
+		books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
+			Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
+	}
 
 	handler.ServeHTTP(w, r)
-
-	//return FormatResponse(res), nil
-
-	//_, _ = fmt.Fprintf(w, "<h1>Hello from Go!</h1>")
 }
 
 // Book struct (Model)
@@ -65,7 +51,7 @@ type Author struct {
 }
 
 // Init books var as a slice Book struct
-var books []Book
+
 
 // Get all books
 func getBooks(w http.ResponseWriter, r *http.Request) {
@@ -126,29 +112,6 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(books)
 }
-
-// Main function
-//func main() {
-//	// Init router
-//	start := time.Now()
-//	r := mux.NewRouter()
-//	elapsed := time.Since(start)
-//	log.Printf("Binomial took %s", elapsed)
-//
-//	// Hardcoded data - @todo: add database
-//	books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One", Author: &Author{Firstname: "John", Lastname: "Doe"}})
-//	books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two", Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
-//
-//	// Route handles & endpoints
-//	r.HandleFunc("/books", getBooks).Methods("GET")
-//	r.HandleFunc("/books/{id}", getBook).Methods("GET")
-//	r.HandleFunc("/books", createBook).Methods("POST")
-//	r.HandleFunc("/books/{id}", updateBook).Methods("PUT")
-//	r.HandleFunc("/books/{id}", deleteBook).Methods("DELETE")
-//
-//	// Start server
-//	log.Fatal(http.ListenAndServe(":8000", r))
-//}
 
 // Request sample
 // {
