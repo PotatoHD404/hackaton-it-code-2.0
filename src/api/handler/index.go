@@ -1,18 +1,12 @@
 package function
 
 import (
-	"database/sql"
 	"encoding/json"
-	"log"
 	"math/rand"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/pgdialect"
-	"github.com/uptrace/bun/driver/pgdriver"
 	"net/http"
 )
 
@@ -49,20 +43,21 @@ func NewDB() *bun.DB {
 		Author: &Author{Firstname: "John", Lastname: "Doe"}})
 	books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
 		Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
-	dsn := os.Getenv("POSTGRESQL")
-	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	db := bun.NewDB(sqldb, pgdialect.New())
+	//dsn := os.Getenv("POSTGRESQL")
+	//sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	//db := bun.NewDB(sqldb, pgdialect.New())
 
-	return db
+	//return db
+	return nil
 }
 
 //var h
 
 func InitProject() {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	//err := godotenv.Load("../../.env")
+	//if err != nil {
+	//	log.Fatal("Error loading .env file")
+	//}
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {

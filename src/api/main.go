@@ -1,7 +1,7 @@
 package main
 
 import (
-	function "hackaton-it-code-2.0/src/handler"
+	function "hackaton-it-code-2.0/handler"
 	"log"
 	"net/http"
 )
