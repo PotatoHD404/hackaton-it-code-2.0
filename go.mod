@@ -6,6 +6,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
 	github.com/uptrace/bun v1.0.15
+	github.com/uptrace/bun/dbfixture v1.0.15
 	github.com/uptrace/bun/dialect/pgdialect v1.0.15
 	github.com/uptrace/bun/driver/pgdriver v1.0.15
 )
@@ -17,5 +18,6 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	mellium.im/sasl v0.2.1 // indirect
 )
