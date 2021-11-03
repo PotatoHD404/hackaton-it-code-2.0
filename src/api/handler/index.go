@@ -1,31 +1,21 @@
-package handler
+package function
 
 import (
+	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 )
 
 var handler http.Handler
+var db *bun.DB
 var books []Book
-
-//type APIHandler struct {
-//
-//	//Db *bun.DB
-//}
-
-//
-//func (h *APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-//	handler.H.ServeHTTP(w, r)
-//}
-
-//func NewAPIHandler() *APIHandler {
-//	res := &APIHandler{NewHttpHandler()}
-//	return res
-//}
-
 
 func NewHttpHandler() http.Handler {
 	r := mux.NewRouter()
@@ -37,33 +27,25 @@ func NewHttpHandler() http.Handler {
 	return r
 }
 
-//
-////func NewDB() *bun.DB {
-////
-////	//dsn := os.Getenv("POSTGRESQL")
-////	//sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-////	//db := bun.NewDB(sqldb, pgdialect.New())
-////
-////	//return db
-////	return nil
-////}
-//
+func NewDB() *bun.DB {
+	dsn := os.Getenv("POSTGRESQL")
+	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	db := bun.NewDB(sqldb, pgdialect.New())
+	return db
+}
 
 func InitProject() {
 	books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
 		Author: &Author{Firstname: "John", Lastname: "Doe"}})
 	books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
 		Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
-	//err := godotenv.Load("../../.env")
-	//if err != nil {
-	//	log.Fatal("Error loading .env file")
-	//}
+	handler = NewHttpHandler()
+	db = NewDB()
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	if handler == nil {
+	if handler == nil || db == nil {
 		InitProject()
-		handler = NewHttpHandler()
 	}
 	handler.ServeHTTP(w, r)
 }
@@ -87,7 +69,6 @@ type Author struct {
 // GetBooks Get all books
 func GetBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//print(books)
 	json.NewEncoder(w).Encode(books)
 }
 
