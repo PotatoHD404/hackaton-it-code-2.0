@@ -12,13 +12,29 @@ import (
 	"os"
 )
 
-// Book struct (Model)
-type Book struct {
-	bun.BaseModel `bun:"books"`
-	ID            string `bun:"id,pk,notnull" json:"id"`
-	Isbn          string `json:"isbn"`
-	Title         string `json:"title"`
-	Author        *User  `json:"author"`
+var db *bun.DB
+var router *mux.Router
+
+func newRouter() *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/api/users", GetUsers).Methods("GET")
+	r.HandleFunc("/api/users/{id}", GetUser).Methods("GET")
+	//r.HandleFunc("/api/books", CreateBook).Methods("POST")
+	//r.HandleFunc("/api/books/{id}", UpdateBook).Methods("PUT")
+	//r.HandleFunc("/api/books/{id}", DeleteBook).Methods("DELETE")
+	return r
+}
+
+func newDB() *bun.DB {
+	dsn := os.Getenv("POSTGRESQL")
+	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	db := bun.NewDB(sqldb, pgdialect.New())
+	return db
+}
+
+func Init() {
+	db = newDB()
+	router = newRouter()
 }
 
 // User struct
@@ -29,60 +45,63 @@ type User struct {
 	Surname       string `bun:"surname" json:"surname"`
 }
 
-var handler http.Handler
-var db *bun.DB
-
-
-//var books []Book
-
-func NewHttpHandler() http.Handler {
-	r := mux.NewRouter()
-	r.HandleFunc("/api/users", GetUsers).Methods("GET")
-	//r.HandleFunc("/api/books/{id}", GetBook).Methods("GET")
-	//r.HandleFunc("/api/books", CreateBook).Methods("POST")
-	//r.HandleFunc("/api/books/{id}", UpdateBook).Methods("PUT")
-	//r.HandleFunc("/api/books/{id}", DeleteBook).Methods("DELETE")
-	return r
-}
-
-//https://github.com/uptrace/bun/blob/master/example/fixture/main.go
-
-func GetUsers(w http.ResponseWriter, _ *http.Request) {
-	ctx := context.Background()
-	var authors []User
-	db.RegisterModel((*User)(nil))
-	if err := db.NewSelect().Model(&authors).Scan(ctx); err != nil {
-		panic(err)
-	}
-
-	if err := json.NewEncoder(w).Encode(authors); err != nil {
-		panic(err)
-	}
-}
-
-func NewDB() *bun.DB {
-	dsn := os.Getenv("POSTGRESQL")
-	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	db := bun.NewDB(sqldb, pgdialect.New())
-	return db
-}
-
-func InitProject() {
-	//books = append(books, Book{ID: "1", Isbn: "438227", Title: "Book One",
-	//	User: &User{name: "John", surname: "Doe", ID: 1}})
-	//books = append(books, Book{ID: "2", Isbn: "454555", Title: "Book Two",
-	//	User: &User{name: "Steve", surname: "Smith", ID: 2}})
-	handler = NewHttpHandler()
-	db = NewDB()
-}
+// The handler function must be first of handlers for @vercel/go!
 
 //goland:noinspection GoUnusedExportedFunction
 func Handler(w http.ResponseWriter, r *http.Request) {
-	if handler == nil || db == nil {
-		InitProject()
+	if db == nil || router == nil {
+		Init()
 	}
 	w.Header().Set("Content-Type", "application/json")
-	handler.ServeHTTP(w, r)
+	router.ServeHTTP(w, r)
+}
+
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	var user User
+	db := newDB()
+	defer func(db *bun.DB) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
+	db.RegisterModel((*User)(nil))
+	params := mux.Vars(r)
+	//params["id"]
+	if err := db.
+		NewSelect().
+		Model(&user).
+		Where("? = ?", bun.Ident("id"), params["id"]).
+		Scan(ctx); err != nil {
+		panic(err)
+	}
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		panic(err)
+	}
+}
+
+//
+////https://github.com/uptrace/bun/blob/master/example/fixture/main.go
+//
+
+func GetUsers(w http.ResponseWriter, _ *http.Request) {
+	ctx := context.Background()
+	var users []User
+	db := newDB()
+	defer func(db *bun.DB) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
+	db.RegisterModel((*User)(nil))
+	if err := db.NewSelect().Model(&users).Scan(ctx); err != nil {
+		panic(err)
+	}
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		panic(err)
+	}
 }
 
 // Init books var as a slice Book struct

@@ -30,6 +30,7 @@ type Org struct {
 	Owner   *User `bun:"rel:belongs-to"`
 }
 
+//goland:noinspection ALL
 func main() {
 	ctx := context.Background()
 
